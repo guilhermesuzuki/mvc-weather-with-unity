@@ -1,0 +1,195 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <style>
+        #info { font-weight: bold; font-size: larger; }
+
+        .weather-temperature-min, .forecast-temperature-min {
+            color: #22cf9b;
+        }
+
+        .weather-temperature-max, .forecast-temperature-max {
+            color: #ff0000;
+        }
+
+        .weather-icon, .forecast-icon {
+            background-position: center left;
+            background-repeat: no-repeat;
+            background-size: auto 100%;
+            width: 80px; height: 80px;
+        }
+
+        /*day*/
+
+        [data-weather-icon="clearsky"] {
+            background-image: url(/Images/clearsky.png);
+        }
+
+        [data-weather-icon="fewclouds"] {
+            background-image: url(/Images/fewclouds.png);
+        }
+
+        [data-weather-icon="scatteredclouds"] {
+            background-image: url(/Images/scatteredclouds.png);
+        }
+
+        [data-weather-icon="brokenclouds"] {
+            background-image: url(/Images/brokenclouds.png);
+        }
+
+        [data-weather-icon="showerrain"] {
+            background-image: url(/Images/showerrain.png);
+        }
+
+        [data-weather-icon="rain"] {
+            background-image: url(/Images/rain.png);
+        }
+
+        [data-weather-icon="thunderstorm"] {
+            background-image: url(/Images/thunderstorm.png);
+        }
+
+        [data-weather-icon="snow"] {
+            background-image: url(/Images/snow.png);
+        }
+
+        [data-weather-icon="mist"] {
+            background-image: url(/Images/mist.png);
+        }
+
+
+        /*night*/
+
+        [data-weather-icon="clearsky-night"] {
+            background-image: url(/Images/clearsky-night.png);
+        }
+
+        [data-weather-icon="fewclouds-night"] {
+            background-image: url(/Images/fewclouds-night.png);
+        }
+
+        [data-weather-icon="scatteredclouds-night"] {
+            background-image: url(/Images/scatteredclouds-night.png);
+        }
+
+        [data-weather-icon="brokenclouds-night"] {
+            background-image: url(/Images/brokenclouds-night.png);
+        }
+
+        [data-weather-icon="showerrain-night"] {
+            background-image: url(/Images/showerrain-night.png);
+        }
+
+        [data-weather-icon="rain-night"] {
+            background-image: url(/Images/rain-night.png);
+        }
+
+        [data-weather-icon="thunderstorm-night"] {
+            background-image: url(/Images/thunderstorm-night.png);
+        }
+
+        [data-weather-icon="snow-night"] {
+            background-image: url(/Images/snow-night.png);
+        }
+
+        [data-weather-icon="mist-night"] {
+            background-image: url(/Images/mist-night.png);
+        }
+    </style>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript">
+
+        var userlocation = null;
+
+        $(document).ready(
+            function () {
+                $("#step1 > button").click(_ip);
+                $("#step2 > button").click(_location);
+                $("#step3 > button").click(_weather);
+            });
+
+        function _ip() {
+            $.getJSON("api/weather/ip",
+                function success(data) {
+                    console.log(data);
+                    $("#step2 > #info").text(data.ip);
+                    $("#step2").fadeIn();
+                }
+            );
+        }
+
+        function _location() {
+            $.getJSON("api/weather/userlocation",
+                { "publicIp": $("#step2 > #info").text(), },
+                function success(data) {
+                    console.log(data);
+                    $("#step3 > #info").text(data.City + ", " + data.Country);
+                    $("#step3").fadeIn();
+
+                    //attaches the json information to a global variable
+                    userlocation = data;
+                }
+            );
+        }
+
+        function _weather() {
+            $.getJSON("api/weather/userweather",
+                userlocation,
+                function success(json) {
+                    console.log(json);
+                    var we = $(".weather-info");
+                    var ok = json.HasWeather == true ? 1 : 0;
+                    if (ok) {
+
+                        var imperial = we.find("[data-is-imperial=1]").length > 0;
+
+                        var icon = we.find(".weather-icon");
+                        icon.attr("data-weather-icon", json.WeatherCode);
+
+                        we.find(".weather-description").text(json.WeatherDescription);
+                        we.find(".weather-location-city").text(json.City);
+                        we.find(".weather-location-country").text(json.Country);
+                        we.find(".weather-temperature").text(imperial ? json.TemperatureInFahrenheit + "ºF" : json.Temperature + "ºC");
+                        we.find(".weather-temperature-min span").text(imperial ? json.MinimumTemperatureInFahrenheit + "ºF" : json.MinimumTemperature + "ºC");
+                        we.find(".weather-temperature-max span").text(imperial ? json.MaximumTemperatureInFahrenheit + "ºF" : json.MaximumTemperature + "ºC");
+
+                        for (var i = 0; i < json.Forecast.length; i++) {
+                            var fc = json.Forecast[i];
+                            var fe = we.find("[data-weather-forecast=" + i + "]");
+                            fe.find(".forecast-icon").attr("data-weather-icon", fc.WeatherCode);
+                            fe.find(".forecast-icon").attr("title", fc.WeatherDescription);
+                            fe.find(".forecast-datetime").text(fc._Timestamp);
+                            fe.find(".forecast-temperature").text(imperial ? fc.TemperatureInFahrenheit + "ºF" : fc.Temperature + "ºC");
+                            fe.find(".forecast-temperature-min").text(imperial ? fc.MinimumTemperatureInFahrenheit + "ºF" : fc.MinimumTemperature + "ºC");
+                            fe.find(".forecast-temperature-max").text(imperial ? fc.MaximumTemperatureInFahrenheit + "ºF" : fc.MaximumTemperature + "ºC");
+                            fe.removeClass("hidden");
+                            console.debug(fc);
+                            console.debug(fe);
+                        }
+                    }
+
+                    $("#end").fadeIn();
+                }
+            );
+        }
+    </script>
+</head>
+<body>
+    <div>
+        <div id="step1">1: Click <button>here</button> to find your public IP address.</div>
+        <div id="step2" style="display:none;">2: Found your public IP! It is <span id="info"></span>. Now, click <button>here</button> to find your location.</div>
+        <div id="step3" style="display:none;">3: Found your location! It is <span id="info"></span>. Now, click <button>here</button> to retrieve the weather information.</div>
+        <div id="end" style="display:none;">
+            @Html.Partial("Weather")
+        </div>
+    </div>
+</body>
+</html>
