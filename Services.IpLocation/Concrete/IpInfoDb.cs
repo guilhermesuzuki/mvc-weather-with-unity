@@ -40,7 +40,7 @@ namespace Services.IpLocation.Concrete
         /// </summary>
         public override string KeyForCaching
         {
-            get { return "ipinfodb-threshold-" + this.ApiKey; }
+            get { return $"ipinfodb-threshold-{ApiKey}"; }
         }
 
         /// <summary>
@@ -71,38 +71,46 @@ namespace Services.IpLocation.Concrete
         {
             if (string.IsNullOrWhiteSpace(ip) == false)
             {
-                //composed url
-                var url = "http://api.ipinfodb.com/v3/ip-city/?key=" + this.ApiKey + "&ip=" + ip + "&format=json";
-                var req = WebRequest.CreateHttp(url);
-                var res = req.GetResponse();
-
-                //adds this call to the number of queries
-                this.NumberOfQueriesMade += 1;
-
-                using (res)
+                try
                 {
-                    var stream = res.GetResponseStream();
-                    var reader = new StreamReader(stream);
-                    var json = JObject.Parse(reader.ReadToEnd());
+                    //composed url
+                    var url = $"http://api.ipinfodb.com/v3/ip-city/?key={ApiKey}&ip={ip}&format=json";
+                    var req = WebRequest.CreateHttp(url);
+                    var res = req.GetResponse();
 
-                    if (json.Value<string>("statusCode") != "ERROR")
+                    using (res)
                     {
-                        return new LocationModel(ip)
+                        var stream = res.GetResponseStream();
+                        var reader = new StreamReader(stream);
+                        var json = JObject.Parse(reader.ReadToEnd());
+
+                        if (json.Value<string>("statusCode") != "ERROR")
                         {
-                            City = json.Value<string>("cityName"),
-                            Country = json.Value<string>("countryName"),
-                            CountryCode = json.Value<string>("countryCode"),
-                            Region = json.Value<string>("regionName"),
-                            Latitude = string.IsNullOrWhiteSpace(json.Value<string>("latitude")) == false ? json.Value<float>("latitude") : (float?)null,
-                            Longitude = string.IsNullOrWhiteSpace(json.Value<string>("longitude")) == false ? json.Value<float>("longitude") : (float?)null,
-                            ZipCode = json.Value<string>("zipCode"),
-                            TimeZone = json.Value<string>("timeZone")
-                        };
+                            //adds this call to the number of queries
+                            this.NumberOfQueriesMade += 1;
+
+                            return new LocationModel(ip)
+                            {
+                                City = json.Value<string>("cityName"),
+                                Country = json.Value<string>("countryName"),
+                                CountryCode = json.Value<string>("countryCode"),
+                                Region = json.Value<string>("regionName"),
+                                Latitude = string.IsNullOrWhiteSpace(json.Value<string>("latitude")) == false ? json.Value<float>("latitude") : (float?)null,
+                                Longitude = string.IsNullOrWhiteSpace(json.Value<string>("longitude")) == false ? json.Value<float>("longitude") : (float?)null,
+                                ZipCode = json.Value<string>("zipCode"),
+                                TimeZone = json.Value<string>("timeZone"),
+                            };
+                        }
+                        else
+                        {
+                            throw new Exception(json.Value<string>("statusMessage"));
+                        }
                     }
-                    else
-                    {
-                        throw new Exception(json.Value<string>("statusMessage"));
-                    }
+                }
+                catch
+                {
+                    this.UnsuccessfulCalls += 1;
+                    throw;
                 }
             }
 

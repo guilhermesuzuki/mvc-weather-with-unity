@@ -63,65 +63,87 @@ namespace Services.WeatherInformation.Concrete
 
         public override List<ForecastModel> Forecast(IWeatherParameters parameters)
         {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-
-            var url = parameters.Latitude.HasValue && parameters.Longitude.HasValue ?
-                string.Format("http://api.openweathermap.org/data/2.5/forecast?lat={0}&lon={1}&appid={2}&units=metric&mode=json", parameters.Latitude, parameters.Longitude, this.ApiKey):
-                string.Format("http://api.openweathermap.org/data/2.5/forecast?q={0},{1}&appid={2}&units=metric&mode=json", parameters.City, parameters.CountryCode, this.ApiKey);
-
-            var res = WebRequest.CreateHttp(url).GetResponse();
-            using (res)
+            if (parameters != null)
             {
-                var reader = new StreamReader(res.GetResponseStream());
-                var data = reader.ReadToEnd();
-                var json = JObject.Parse(data);
+                try
+                {
+                    var url = parameters.Latitude.HasValue && parameters.Longitude.HasValue ?
+                        $"http://api.openweathermap.org/data/2.5/forecast?lat={parameters.Latitude}&lon={parameters.Longitude}&appid={ApiKey}&units=metric&mode=json" :
+                        $"http://api.openweathermap.org/data/2.5/forecast?q={parameters.City},{parameters.CountryCode}&appid={ApiKey}&units=metric&mode=json";
 
-                //closes the stream reader
-                reader.Close();
-                reader.Dispose();
+                    var res = WebRequest.CreateHttp(url).GetResponse();
+                    using (res)
+                    {
+                        var reader = new StreamReader(res.GetResponseStream());
+                        var data = reader.ReadToEnd();
+                        var json = JObject.Parse(data);
 
-                //adds one call
-                this.NumberOfQueriesMade += 1;
+                        //closes the stream reader
+                        reader.Close();
+                        reader.Dispose();
 
-                //converts
-                return ToForecasts(json);
+                        //adds one call
+                        this.NumberOfQueriesMade += 1;
+
+                        //converts
+                        return ToForecasts(json);
+                    }
+                }
+                catch
+                {
+                    this.UnsuccessfulCalls += 1;
+                    throw;
+                }
             }
+
+            throw new ArgumentNullException("parameters");
         }
 
         public override WeatherModel Weather(IWeatherParameters parameters)
         {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-
-            var url = parameters.Latitude.HasValue && parameters.Longitude.HasValue ?
-                string.Format("http://api.openweathermap.org/data/2.5/weather?lat={0}&lon={1}&appid={2}&units=metric&mode=json", parameters.Latitude, parameters.Longitude, this.ApiKey) :
-                string.Format("http://api.openweathermap.org/data/2.5/weather?q={0},{1}&appid={2}&units=metric&mode=json", parameters.City, parameters.CountryCode, this.ApiKey);
-
-            var res = WebRequest.CreateHttp(url).GetResponse();
-            using (res)
+            if (parameters != null)
             {
-                var reader = new StreamReader(res.GetResponseStream());
-                var data = reader.ReadToEnd();
-                var json = JObject.Parse(data);
+                var url = parameters.Latitude.HasValue && parameters.Longitude.HasValue ?
+                    $"http://api.openweathermap.org/data/2.5/weather?lat={parameters.Latitude}&lon={parameters.Longitude}&appid={ApiKey}&units=metric&mode=json" :
+                    $"http://api.openweathermap.org/data/2.5/weather?q={parameters.City},{parameters.CountryCode}&appid={ApiKey}&units=metric&mode=json";
 
-                //closes the stream reader
-                reader.Close();
-                reader.Dispose();
+                try
+                {
+                    var res = WebRequest.CreateHttp(url).GetResponse();
+                    using (res)
+                    {
+                        var reader = new StreamReader(res.GetResponseStream());
+                        var data = reader.ReadToEnd();
+                        var json = JObject.Parse(data);
 
-                //adds one call
-                this.NumberOfQueriesMade += 1;
+                        //closes the stream reader
+                        reader.Close();
+                        reader.Dispose();
 
-                var weather = ToWeather(json);
+                        //adds one call
+                        this.NumberOfQueriesMade += 1;
 
-                //uses parameters to set city and country
-                weather.City = parameters.City;
-                weather.Region = parameters.Region;
-                weather.RegionCode = parameters.RegionCode;
-                weather.Country = parameters.Country;
-                weather.CountryCode = parameters.CountryCode;
+                        var weather = ToWeather(json);
 
-                //converts
-                return weather;
+                        //uses parameters to set city and country
+                        weather.City = parameters.City;
+                        weather.Region = parameters.Region;
+                        weather.RegionCode = parameters.RegionCode;
+                        weather.Country = parameters.Country;
+                        weather.CountryCode = parameters.CountryCode;
+
+                        //converts
+                        return weather;
+                    }
+                }
+                catch
+                {
+                    this.UnsuccessfulCalls += 1;
+                    throw;
+                }
             }
+
+            throw new ArgumentNullException("parameters");
         }
 
         /// <summary>

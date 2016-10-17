@@ -82,36 +82,48 @@ namespace Services.WeatherInformation.Concrete
 
         public override WeatherModel Weather(IWeatherParameters parameters)
         {
-            if (parameters == null) throw new ArgumentNullException("parameters");
-
-            var url = string.Format("https://api.forecast.io/forecast/{0}/{1},{2}?units=si", this.ApiKey, parameters.Latitude, parameters.Longitude);
-            var res = WebRequest.CreateHttp(url).GetResponse();
-            using (res)
+            if (parameters != null)
             {
-                var reader = new StreamReader(res.GetResponseStream());
-                var data = reader.ReadToEnd();
-                var json = JObject.Parse(data);
+                try
+                {
+                    var url = $"https://api.darksky.net/forecast/{ApiKey}/{parameters.Latitude},{parameters.Longitude}?units=si";
+                    var res = WebRequest.CreateHttp(url).GetResponse();
 
-                //closes the stream reader
-                reader.Close();
-                reader.Dispose();
+                    using (res)
+                    {
+                        var reader = new StreamReader(res.GetResponseStream());
+                        var data = reader.ReadToEnd();
+                        var json = JObject.Parse(data);
 
-                //adds one call
-                this.NumberOfQueriesMade += 1;
+                        //closes the stream reader
+                        reader.Close();
+                        reader.Dispose();
 
-                //parses json to weathermodel
-                var weather = ToWeather(json);
+                        //adds one call
+                        this.NumberOfQueriesMade += 1;
 
-                //uses parameters to set city and country
-                weather.City = parameters.City;
-                weather.Region = parameters.Region;
-                weather.RegionCode = parameters.RegionCode;
-                weather.Country = parameters.Country;
-                weather.CountryCode = parameters.CountryCode;
+                        //parses json to weathermodel
+                        var weather = ToWeather(json);
 
-                //converts
-                return weather;
+                        //uses parameters to set city and country
+                        weather.City = parameters.City;
+                        weather.Region = parameters.Region;
+                        weather.RegionCode = parameters.RegionCode;
+                        weather.Country = parameters.Country;
+                        weather.CountryCode = parameters.CountryCode;
+
+                        //converts
+                        return weather;
+                    }
+                }
+                catch
+                {
+                    this.UnsuccessfulCalls += 1;
+                    throw;
+                }
             }
+
+            throw new ArgumentNullException("parameters");
         }
 
         /// <summary>

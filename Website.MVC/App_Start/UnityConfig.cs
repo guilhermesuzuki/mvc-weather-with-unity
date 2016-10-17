@@ -37,11 +37,11 @@ namespace Website.MVC.App_Start
         public static void RegisterTypes(IUnityContainer container)
         {
             //adding free geo ip as a geolocation provider
-            container.RegisterInstance<ILocationService>(new FreeGeoIp());
+            container.RegisterInstance<ILocationService>("location-1", new FreeGeoIp());
 
             //YOU WILL NEED API KEYS FOR THIS SAMPLE
-            container.RegisterInstance<IWeatherService>(new ForecastIO("YOUR API KEY"));
-            container.RegisterInstance<IWeatherService>(new OpenWeatherMap("YOUR API KEY"));
+            container.RegisterInstance<IWeatherService>("weather-1", new ForecastIO("2d07c346f91769c7bce47634367e3cb1"));
+            container.RegisterInstance<IWeatherService>("weather-2", new OpenWeatherMap("fa3726e64a3130f5d96a189d915738a2"));
         }
     }
 }

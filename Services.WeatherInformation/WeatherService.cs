@@ -15,7 +15,7 @@ namespace Services.WeatherInformation
         /// </summary>
         public virtual bool IsUnderThresholdLimit
         {
-            get { return this.NumberOfQueriesMade < this.ThresoldLimit; }
+            get { return (this.NumberOfQueriesMade + this.UnsuccessfulCalls) < this.ThresoldLimit; }
         }
 
         /// <summary>
@@ -43,7 +43,9 @@ namespace Services.WeatherInformation
                         {
                             //first call within the hour limit
                             HttpContext.Current.Cache.Add(this.KeyForCaching, 0, null,
-                                DateTime.Now.Add(this.ThresholdExpiration), Cache.NoSlidingExpiration, CacheItemPriority.Default, null);
+                                DateTime.Now.Add(this.ThresholdExpiration), Cache.NoSlidingExpiration, CacheItemPriority.Default,
+                                (k, v, r) => { this.UnsuccessfulCalls = 0; }
+                                );
                         }
                     }
                 }
@@ -91,5 +93,21 @@ namespace Services.WeatherInformation
         /// Timespan the threshold limit will be set to zero, enabling the instance to be called again
         /// </summary>
         public abstract TimeSpan ThresholdExpiration { get; }
+
+        /// <summary>
+        /// Number of Unsuccessful calls made
+        /// </summary>
+        public int UnsuccessfulCalls
+        {
+            get
+            {
+                var key = $"{KeyForCaching}/UnsuccessfulCalls";
+                return HttpRuntime.Cache[key] == null || HttpRuntime.Cache[key] is int == false ? 0 : (int)HttpRuntime.Cache[key];
+            }
+            set
+            {
+                HttpRuntime.Cache[$"{KeyForCaching}/UnsuccessfulCalls"] = value;
+            }
+        }
     }
 }

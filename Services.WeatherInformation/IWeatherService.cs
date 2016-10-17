@@ -12,6 +12,11 @@ namespace Services.WeatherInformation
     public interface IWeatherService
     {
         /// <summary>
+        /// Number of unsuccessful calls
+        /// </summary>
+        int UnsuccessfulCalls { get; }
+
+        /// <summary>
         /// How many calls were made to it
         /// </summary>
         int NumberOfQueriesMade { get; }

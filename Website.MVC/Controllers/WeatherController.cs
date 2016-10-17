@@ -69,7 +69,7 @@ namespace Website.MVC.Controllers
                         .GetConfiguredContainer()
                         .ResolveAll<ILocationService>()
                         .Where(x => x.IsUnderThresholdLimit)
-                        .OrderBy(x => x.NumberOfQueriesMade)
+                        .OrderBy(x => x.UnsuccessfulCalls).ThenBy(x => x.NumberOfQueriesMade)
                         .FirstOrDefault();
 
                     var m = ipservice.Find(publicIp);
@@ -96,7 +96,7 @@ namespace Website.MVC.Controllers
                         .GetConfiguredContainer()
                         .ResolveAll<IWeatherService>()
                         .Where(x => x.IsUnderThresholdLimit)
-                        .OrderBy(x => x.NumberOfQueriesMade)
+                        .OrderBy(x => x.UnsuccessfulCalls).ThenBy(x => x.NumberOfQueriesMade)
                         .FirstOrDefault();
 
                     //parameters for the service
@@ -125,7 +125,7 @@ namespace Website.MVC.Controllers
                             .GetConfiguredContainer()
                             .ResolveAll<IWeatherService>()
                             .Where(x => x.IsUnderThresholdLimit)
-                            .OrderBy(x => x.NumberOfQueriesMade)
+                            .OrderBy(x => x.UnsuccessfulCalls).ThenBy(x => x.NumberOfQueriesMade)
                             .FirstOrDefault();
 
                         m.Forecast = forecastservice.Forecast(wparams);

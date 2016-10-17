@@ -25,7 +25,23 @@ namespace Services.IpLocation
         {
             get
             {
-                return this.NumberOfQueriesMade < this.ThresoldLimit;
+                return (this.NumberOfQueriesMade + this.UnsuccessfulCalls) < this.ThresoldLimit;
+            }
+        }
+
+        /// <summary>
+        /// Number of Unsuccessful calls made
+        /// </summary>
+        public int UnsuccessfulCalls
+        {
+            get
+            {
+                var key = $"{KeyForCaching}/UnsuccessfulCalls";
+                return HttpRuntime.Cache[key] == null || HttpRuntime.Cache[key] is int == false ? 0 : (int)HttpRuntime.Cache[key];
+            }
+            set 
+            {
+                HttpRuntime.Cache[$"{KeyForCaching}/UnsuccessfulCalls"] = value;
             }
         }
 
@@ -36,27 +52,31 @@ namespace Services.IpLocation
         {
             get
             {
-                if (HttpContext.Current.Cache[this.KeyForCaching] == null)
+                var key = $"{KeyForCaching}/NumberOfQueriesMade";
+
+                if (HttpRuntime.Cache[key] == null)
                 {
                     lock (SyncRoot)
                     {
-                        if (HttpContext.Current.Cache[this.KeyForCaching] == null)
+                        if (HttpRuntime.Cache[key] == null)
                         {
                             //first call within the hour limit
-                            HttpContext.Current.Cache.Add(this.KeyForCaching, 0, null, 
-                                DateTime.Now.Add(this.ThresholdExpiration), Cache.NoSlidingExpiration, CacheItemPriority.Default, null);
+                            HttpRuntime.Cache.Add(
+                                key, 0, null, DateTime.Now.Add(this.ThresholdExpiration), Cache.NoSlidingExpiration, CacheItemPriority.Default,
+                                (k, v, r) => { this.UnsuccessfulCalls = 0; }
+                                );
                         }
                     }
                 }
 
-                return (int)HttpContext.Current.Cache[this.KeyForCaching];
+                return (int)HttpRuntime.Cache[key];
             }
 
             set
             {
                 //dummy call to create cache (if needed)
                 var current = this.NumberOfQueriesMade;
-                HttpContext.Current.Cache[this.KeyForCaching] = value;
+                HttpRuntime.Cache[$"{KeyForCaching}/NumberOfQueriesMade"] = value;
             }
         }
 
@@ -65,7 +85,7 @@ namespace Services.IpLocation
         /// </summary>
         public abstract int ThresoldLimit
         {
-            get; 
+            get;
         }
 
         /// <summary>

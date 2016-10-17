@@ -24,7 +24,7 @@ namespace Services.IpLocation.Concrete
         /// <summary>
         /// 
         /// </summary>
-        public FreeGeoIp()
+        public FreeGeoIp(): base()
         {
 
         }
@@ -65,33 +65,41 @@ namespace Services.IpLocation.Concrete
         {
             if (string.IsNullOrWhiteSpace(ip) == false)
             {
-                var url = "http://freegeoip.net/json/" + ip;
-                var req = WebRequest.CreateHttp(url);
-                var res = req.GetResponse();
-
-                //adds this call to the current threshold
-                this.NumberOfQueriesMade += 1;
-
-                using (res)
+                try
                 {
-                    var stream = res.GetResponseStream();
-                    var reader = new StreamReader(stream);
-                    var json = JObject.Parse(reader.ReadToEnd());
+                    var url = "http://freegeoip.net/json/" + ip;
+                    var req = WebRequest.CreateHttp(url);
+                    var res = req.GetResponse();
 
-                    //{"ip":"174.119.112.99","country_code":"CA","country_name":"Canada","region_code":"ON","region_name":"Ontario","city":"Toronto","zip_code":"M6E","time_zone":"America/Toronto","latitude":43.6889,"longitude":-79.4507,"metro_code":0}
-
-                    return new LocationModel(ip)
+                    using (res)
                     {
-                        City = json.Value<string>("city"),
-                        Country = json.Value<string>("country_name"),
-                        CountryCode = json.Value<string>("country_code"),
-                        Region = json.Value<string>("region_name"),
-                        RegionCode = json.Value<string>("region_code"),
-                        Latitude = string.IsNullOrWhiteSpace(json.Value<string>("latitude")) == false ? json.Value<float>("latitude") : (float?)null,
-                        Longitude = string.IsNullOrWhiteSpace(json.Value<string>("longitude")) == false ? json.Value<float>("longitude") : (float?)null,
-                        ZipCode = json.Value<string>("zip_code"),
-                        TimeZone = json.Value<string>("time_zone")
-                    };
+                        var stream = res.GetResponseStream();
+                        var reader = new StreamReader(stream);
+                        var json = JObject.Parse(reader.ReadToEnd());
+
+                        //{"ip":"174.119.112.99","country_code":"CA","country_name":"Canada","region_code":"ON","region_name":"Ontario","city":"Toronto","zip_code":"M6E","time_zone":"America/Toronto","latitude":43.6889,"longitude":-79.4507,"metro_code":0}
+
+                        //adds this call to the current threshold
+                        this.NumberOfQueriesMade += 1;
+
+                        return new LocationModel(ip)
+                        {
+                            City = json.Value<string>("city"),
+                            Country = json.Value<string>("country_name"),
+                            CountryCode = json.Value<string>("country_code"),
+                            Region = json.Value<string>("region_name"),
+                            RegionCode = json.Value<string>("region_code"),
+                            Latitude = string.IsNullOrWhiteSpace(json.Value<string>("latitude")) == false ? json.Value<float>("latitude") : (float?)null,
+                            Longitude = string.IsNullOrWhiteSpace(json.Value<string>("longitude")) == false ? json.Value<float>("longitude") : (float?)null,
+                            ZipCode = json.Value<string>("zip_code"),
+                            TimeZone = json.Value<string>("time_zone"),
+                        };
+                    }
+                }
+                catch
+                {
+                    this.UnsuccessfulCalls += 1;
+                    throw;
                 }
             }
 
